@@ -1002,6 +1002,12 @@ fn process<'a>(
         } else {
             data.sourcepos.start.line += preamble_lines;
         }
+
+        if data.sourcepos.end.line == 0 {
+            data.sourcepos.end.line = data.sourcepos.start.line;
+        } else {
+            data.sourcepos.end.line += preamble_lines;
+        }
     }
 
     Ok(Some(InnerContext {
