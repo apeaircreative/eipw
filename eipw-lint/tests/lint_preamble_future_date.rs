@@ -48,8 +48,9 @@ hello world"#;
 }
 
 #[tokio::test]
-async fn past_date() {
+async fn past_date_during_last_call() {
     let src = r#"---
+status: Last Call
 last-call-deadline: 2000-01-01
 ---
 hello world"#;
@@ -67,7 +68,35 @@ hello world"#;
         reports,
         r#"error[preamble-future-date]: preamble header `last-call-deadline` must be today or a future date
   |
-2 | last-call-deadline: 2000-01-01
+3 | last-call-deadline: 2000-01-01
+  |                    ^^^^^^^^^^^ date is in the past
+  |
+"#,
+    );
+}
+
+#[tokio::test]
+async fn past_date_outside_last_call() {
+    let src = r#"---
+status: Review
+last-call-deadline: 2000-01-01
+---
+hello world"#;
+
+    let reports = Linter::<Text<String>>::default()
+        .clear_lints()
+        .deny("preamble-future-date", FutureDate("last-call-deadline"))
+        .check_slice(None, src)
+        .run()
+        .await
+        .unwrap()
+        .into_inner();
+
+    assert_eq!(
+        reports,
+        r#"error[preamble-future-date]: preamble header `last-call-deadline` must be today or a future date
+  |
+3 | last-call-deadline: 2000-01-01
   |                    ^^^^^^^^^^^ date is in the past
   |
 "#,
