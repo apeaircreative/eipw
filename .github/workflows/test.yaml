@@ -36,6 +36,47 @@ jobs:
       - name: Build Node.js WASM package
         working-directory: eipw-lint-js
         run: wasm-pack build --target nodejs
+      - name: Verify Node.js WASM package contents
+        working-directory: eipw-lint-js
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const path = require("node:path");
+
+          const pkgDir = path.resolve("pkg");
+          const manifestPath = path.join(pkgDir, "package.json");
+
+          if (!fs.existsSync(manifestPath)) {
+            throw new Error("Missing pkg/package.json");
+          }
+
+          const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+          console.log(`Package metadata found: ${manifest.name || "(unnamed)"}`);
+
+          if (typeof manifest.main !== "string" || !manifest.main.trim()) {
+            throw new Error("package.json does not declare a valid main entry point");
+          }
+
+          const entryPath = path.resolve(pkgDir, manifest.main);
+          if (!entryPath.startsWith(pkgDir + path.sep) || !fs.existsSync(entryPath) ||
+              !fs.statSync(entryPath).isFile()) {
+            throw new Error(`Missing JavaScript entry point: ${manifest.main}`);
+          }
+
+          console.log(`JavaScript entry point found: ${manifest.main}`);
+
+          const wasmFiles = fs.readdirSync(pkgDir).filter(name =>
+            name.endsWith(".wasm") &&
+            fs.statSync(path.join(pkgDir, name)).isFile()
+          );
+
+          if (wasmFiles.length === 0) {
+            throw new Error("No .wasm binary found in pkg/");
+          }
+
+          console.log(`WASM binary found: ${wasmFiles.join(", ")}`);
+          NODE
 
   fmt:
     name: Rustfmt
