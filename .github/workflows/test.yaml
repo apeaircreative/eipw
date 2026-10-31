@@ -1,3 +1,4 @@
+# Refresh workflow registration in fork.
 on:
   workflow_dispatch:
   pull_request:
