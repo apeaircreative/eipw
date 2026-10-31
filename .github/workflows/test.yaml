@@ -33,6 +33,9 @@ jobs:
       - run: cargo test --all --no-default-features --locked
       - run: cargo test --all --all-features --locked
       - run: wasm-pack test --node --all --locked
+      - name: Build Node.js WASM package
+        working-directory: eipw-lint-js
+        run: wasm-pack build --target nodejs
 
   fmt:
     name: Rustfmt
